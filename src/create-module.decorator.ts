@@ -1,49 +1,23 @@
 import { Module, ModuleMetadata, Provider, Type } from '@nestjs/common';
 
-// Cached references to optional dependencies
-let _TypeOrmModule: typeof import('@nestjs/typeorm').TypeOrmModule | undefined;
-let _getRepositoryToken: typeof import('@nestjs/typeorm').getRepositoryToken | undefined;
-let _BullModule: typeof import('@nestjs/bullmq').BullModule | undefined;
-
 /**
- * Configure optional dependencies for CreateModule.
- * Call this once at app startup before any modules are loaded.
+ * Checks if a package is installed and returns it, or throws a helpful error.
+ * Uses require.main.require() to resolve from the main app's context,
+ * ensuring peer dependencies are resolved correctly in pnpm workspaces.
  */
-export function configureCreateModule(config: {
-  typeorm?: typeof import('@nestjs/typeorm');
-  bullmq?: typeof import('@nestjs/bullmq');
-}) {
-  if (config.typeorm) {
-    _TypeOrmModule = config.typeorm.TypeOrmModule;
-    _getRepositoryToken = config.typeorm.getRepositoryToken;
-  }
-  if (config.bullmq) {
-    _BullModule = config.bullmq.BullModule;
-  }
-}
-
-function getTypeOrm() {
-  if (!_TypeOrmModule || !_getRepositoryToken) {
+function requireOptional<T>(packageName: string, featureName: string): T {
+  try {
+    // Use require.main.require to resolve from the main app's context
+    // This ensures peer dependencies are resolved from the consuming app,
+    // not from this package's node_modules (important for pnpm's strict isolation)
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require.main!.require(packageName) as T;
+  } catch {
     throw new Error(
-      `CreateModule: To use 'entities', configure TypeORM first:\n` +
-        `  import { configureCreateModule } from '@dl-tech/nestjs-core';\n` +
-        `  import * as typeorm from '@nestjs/typeorm';\n` +
-        `  configureCreateModule({ typeorm });`,
+      `CreateModule: To use '${featureName}', install ${packageName}:\n` +
+        `  pnpm add ${packageName}`,
     );
   }
-  return { TypeOrmModule: _TypeOrmModule, getRepositoryToken: _getRepositoryToken };
-}
-
-function getBullMQ() {
-  if (!_BullModule) {
-    throw new Error(
-      `CreateModule: To use 'processors', configure BullMQ first:\n` +
-        `  import { configureCreateModule } from '@dl-tech/nestjs-core';\n` +
-        `  import * as bullmq from '@nestjs/bullmq';\n` +
-        `  configureCreateModule({ bullmq });`,
-    );
-  }
-  return { BullModule: _BullModule };
 }
 
 type Metadata = Required<ModuleMetadata>;
@@ -141,7 +115,10 @@ class ModuleBuilder {
   }
 
   set entities(value: RequiredOptions['entities']) {
-    const { TypeOrmModule, getRepositoryToken } = getTypeOrm();
+    const { TypeOrmModule, getRepositoryToken } = requireOptional<typeof import('@nestjs/typeorm')>(
+      '@nestjs/typeorm',
+      'entities',
+    );
 
     value.forEach((entity) => {
       this._imports.push(TypeOrmModule.forFeature([entity.entity as any]));
@@ -170,7 +147,10 @@ class ModuleBuilder {
   }
 
   set processors(value: RequiredOptions['processors']) {
-    const { BullModule } = getBullMQ();
+    const { BullModule } = requireOptional<typeof import('@nestjs/bullmq')>(
+      '@nestjs/bullmq',
+      'processors',
+    );
 
     this._imports.push(...value.map((type) => BullModule.registerQueue({ name: type.name })));
     this._providers.push(...value);
