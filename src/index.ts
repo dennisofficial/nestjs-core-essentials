@@ -1,4 +1,4 @@
-export * from './create-module.decorator';
-export * from './sse-generator.decorator';
+export * from './decorators/create-module.decorator';
+export * from './decorators/sse-generator.decorator';
 export * from './logger';
 export * from './env';
