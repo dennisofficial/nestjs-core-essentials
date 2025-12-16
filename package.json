@@ -40,10 +40,6 @@
     }
   },
   "devDependencies": {
-    "@nestjs/bullmq": "^11.0.0",
-    "@nestjs/common": "^11.1.9",
-    "@nestjs/typeorm": "^11.0.0",
-    "reflect-metadata": "^0.2.2",
     "tsup": "^8.5.0",
     "typescript": "^5.9.3"
   }
