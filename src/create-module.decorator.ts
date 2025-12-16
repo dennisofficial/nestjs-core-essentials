@@ -60,6 +60,9 @@ export interface ICreateModuleOptions {
   /** Event handlers (not exported) */
   events?: Metadata['providers'];
 
+  /** Event handlers (not exported) */
+  listeners?: Metadata['providers'];
+
   /** Cron jobs (not exported) */
   cronJobs?: Metadata['providers'];
 
@@ -139,6 +142,10 @@ class ModuleBuilder {
   }
 
   set events(value: RequiredOptions['events']) {
+    this._providers.push(...value);
+  }
+
+  set listeners(value: RequiredOptions['listeners']) {
     this._providers.push(...value);
   }
 
