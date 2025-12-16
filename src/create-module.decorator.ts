@@ -30,10 +30,6 @@ export interface EntityOptions<T extends EntityTarget = EntityTarget> {
   repoClass: Type;
 }
 
-interface ProcessorType {
-  name: string;
-}
-
 export interface ICreateModuleOptions {
   /** Standard NestJS imports */
   imports?: Metadata['imports'];
@@ -63,7 +59,7 @@ export interface ICreateModuleOptions {
   cronJobs?: Metadata['providers'];
 
   /** BullMQ processors (requires @nestjs/bullmq) */
-  processors?: Type<ProcessorType>[];
+  processors?: Type[];
 
   /** Initialization provider (not exported) */
   init?: Provider;
