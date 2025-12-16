@@ -1,0 +1,50 @@
+{
+  "name": "@dl-tech/nestjs-core",
+  "version": "1.0.0",
+  "description": "Essential NestJS utilities and decorators",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./src/index.ts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./src/index.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch"
+  },
+  "peerDependencies": {
+    "@nestjs/common": ">=10.0.0",
+    "@nestjs/bullmq": ">=10.0.0",
+    "@nestjs/typeorm": ">=10.0.0",
+    "reflect-metadata": ">=0.1.0"
+  },
+  "peerDependenciesMeta": {
+    "@nestjs/bullmq": {
+      "optional": true
+    },
+    "@nestjs/typeorm": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@nestjs/bullmq": "^11.0.0",
+    "@nestjs/common": "^11.1.9",
+    "@nestjs/typeorm": "^11.0.0",
+    "reflect-metadata": "^0.2.2",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.3"
+  }
+}
