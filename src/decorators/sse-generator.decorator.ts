@@ -38,9 +38,15 @@ class SseGeneratorInterceptor implements NestInterceptor {
   intercept(_context: ExecutionContext, next: CallHandler): Observable<MessageEvent> {
     return next.handle().pipe(
       // The handler returns an AsyncGenerator - flatten it into individual values
-      mergeMap((generator: AsyncGenerator<unknown>) => fromAsyncGenerator(generator)),
+      mergeMap((generator: AsyncGenerator) => fromAsyncGenerator(generator)),
       // Wrap each yielded value in { data: value }
-      map((data): MessageEvent => ({ data: data as string | object })),
+      map(
+        (data): MessageEvent => ({
+          data: data as string | object,
+          type: 'message',
+          id: Date.now().toString(),
+        }),
+      ),
     );
   }
 }
