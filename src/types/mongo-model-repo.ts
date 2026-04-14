@@ -72,7 +72,7 @@ export abstract class MongoModelRepo<
   abstract aggregate<R = any>(pipeline: PipelineStage[]): Aggregate<Array<R>>;
 
   /** Base Mongoose instance the model uses. */
-  base: Mongoose;
+  declare base: Mongoose;
 
   /**
    * If this is a discriminator model, `baseModelName` is the name of
@@ -137,7 +137,7 @@ export abstract class MongoModelRepo<
   ): Promise<mongodb.BulkWriteResult>;
 
   /** Collection the model uses. */
-  collection: Collection;
+  declare collection: Collection;
 
   /** Creates a `countDocuments` query: counts the number of documents that match `filter`. */
   abstract countDocuments(
@@ -250,7 +250,7 @@ export abstract class MongoModelRepo<
    * Event emitter that reports any errors that occurred. Useful for global error
    * handling.
    */
-  events: NodeJS.EventEmitter;
+  declare events: NodeJS.EventEmitter;
 
   /**
    * Finds a single document by its _id field. `findById(id)` is almost*
@@ -454,7 +454,7 @@ export abstract class MongoModelRepo<
   ): Promise<Array<{ name: string }>>;
 
   /** The name of the model */
-  modelName: string;
+  declare modelName: string;
 
   /** Populates document references. */
   abstract populate(
@@ -881,7 +881,7 @@ export abstract class MongoModelRepo<
   abstract recompileSchema(): void;
 
   /** Schema the model uses. */
-  schema: Schema<TRawDocType>;
+  declare schema: Schema<TRawDocType>;
 
   /** Creates a `updateMany` query: updates all documents that match `filter` with `update`. */
   abstract updateMany<ResultDoc = THydratedDocumentType>(

@@ -94,7 +94,7 @@ class ModuleBuilder implements ModuleBuilderHandler {
   private _exports: Metadata['exports'] = [];
 
   constructor(private readonly options: ICreateModuleOptions) {
-    Object.keys(options).forEach((key: keyof ICreateModuleOptions) => {
+    (Object.keys(options) as (keyof ICreateModuleOptions)[]).forEach((key) => {
       const value = options[key];
       if (!value) {
         return;
