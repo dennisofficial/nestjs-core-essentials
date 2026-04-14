@@ -1,5 +1,5 @@
 {
-  "name": "@dl-tech/nestjs-core",
+  "name": "@workspace/nestjs-core",
   "version": "1.0.1",
   "description": "Essential NestJS utilities and decorators",
   "main": "./dist/index.js",
@@ -22,8 +22,9 @@
     "src"
   ],
   "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch"
+    "build": "pnpm tsup && pnpm install --prefer-offline --ignore-scripts --frozen-lockfile",
+    "dev": "nodemon",
+    "prepare": "tsup"
   },
   "peerDependencies": {
     "@nestjs/bullmq": ">=11.0.0",
@@ -50,7 +51,11 @@
     }
   },
   "devDependencies": {
+    "@nestjs/mongoose": "^11.0.4",
     "@types/express": "^5.0.6",
+    "class-validator": "catalog:",
+    "mongodb": "^7.1.1",
+    "mongoose": "^9.4.1",
     "pretty-ms": "^9.3.0",
     "tsup": "^8.5.0",
     "typescript": "^5.9.3"

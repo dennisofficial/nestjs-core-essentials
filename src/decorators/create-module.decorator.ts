@@ -1,102 +1,90 @@
-import { Module, ModuleMetadata, Provider, Type } from '@nestjs/common';
+// noinspection JSUnusedGlobalSymbols
 
-/**
- * Checks if a package is installed and returns it, or throws a helpful error.
- * Uses require.main.require() to resolve from the main app's context,
- * ensuring peer dependencies are resolved correctly in pnpm workspaces.
- */
-function requireOptional<T>(packageName: string, featureName: string): T {
-  try {
-    // Use require.main.require to resolve from the main app's context
-    // This ensures peer dependencies are resolved from the consuming app,
-    // not from this package's node_modules (important for pnpm's strict isolation)
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    return require.main!.require(packageName) as T;
-  } catch {
-    throw new Error(
-      `CreateModule: To use '${featureName}', install ${packageName}:\n` +
-        `  pnpm add ${packageName}`,
-    );
-  }
+import { Module, ModuleMetadata, Provider, Type } from '@nestjs/common';
+import { BullModule, WorkerHost } from '@nestjs/bullmq';
+import { Model, Schema } from 'mongoose';
+import { DiscriminatorOptions, getModelToken, MongooseModule } from '@nestjs/mongoose';
+import { isDefined } from 'class-validator';
+import { AbstractType } from '../types';
+import { MongoModelRepo } from '../types/mongo-model-repo';
+
+interface CollectionConfig extends CreateCollectionConfig {
+  connectionName?: string;
+  repoClass: AbstractType<MongoModelRepo<any>>;
 }
+
+export const CreateModule = (options: ICreateModuleOptions) =>
+  Module(new ModuleBuilder(options).toMetadata());
 
 type Metadata = Required<ModuleMetadata>;
 
-/**
- * Entity class constructor or EntitySchema-like object.
- * Covers both patterns without requiring @nestjs/typeorm types.
- */
-export type EntityTarget =
-  | (new (...args: any[]) => any) // Class-based entity
-  | { name: string; options?: unknown }; // EntitySchema
-
-export interface EntityOptions<T extends EntityTarget = EntityTarget> {
-  entity: T;
-  repoClass: Type;
+export interface CreateCollectionConfig {
+  name: string;
+  schema: Schema;
+  discriminators?: DiscriminatorOptions[];
 }
 
 export interface ICreateModuleOptions {
-  /** Standard NestJS imports */
+  // Standard NestJS Exports
   imports?: Metadata['imports'];
 
-  /** Imports that are automatically re-exported */
+  // Standard NestJS Imports, with Auto Export
   modules?: Metadata['imports'];
 
-  /** Standard NestJS controllers */
+  // Auto create MongoDB Collection
+  collection?: CollectionConfig | CollectionConfig[];
+
+  // Standard NestJS Controllers
   controllers?: Metadata['controllers'];
 
-  /** Providers (not exported) */
+  // For Organization, Will be treated as non-exported Provider
   providers?: Metadata['providers'];
 
-  /** TypeORM entities with repository classes (requires @nestjs/typeorm) */
-  entities?: EntityOptions[];
+  // For Organization, Will be treated as exported Provider
+  chains?: Metadata['providers'];
 
-  /** WebSocket gateways (not exported) */
+  // For Organization, Will be treated as non-exported Provider
   gateways?: Metadata['providers'];
 
-  /** Services (automatically exported) */
+  // Services will be auto exported
   services?: Metadata['providers'];
 
-  /** Event handlers (not exported) */
+  // For Organization, Will be treated as non-exported Provider
   events?: Metadata['providers'];
 
-  /** Event handlers (not exported) */
-  listeners?: Metadata['providers'];
-
-  /** Cron jobs (not exported) */
+  // For Organization, Will be treated as non-exported Provider
   cronJobs?: Metadata['providers'];
 
-  /** BullMQ processors (requires @nestjs/bullmq) */
-  processors?: Type[];
+  // Auto Create BullMQ Processes
+  processors?: Type<WorkerHost>[];
 
-  /** Initialization provider (not exported) */
+  // For Organization, Will be treated as non-exported Provider
   init?: Provider;
 
-  /** Standard NestJS exports */
+  // Standard NestJS Exports
   exports?: Metadata['exports'];
 }
 
 type RequiredOptions = Required<ICreateModuleOptions>;
 
-export const CreateModule = (options: ICreateModuleOptions) =>
-  Module(new ModuleBuilder(options).toMetadata());
+type ModuleBuilderHandler = {
+  [K in keyof RequiredOptions]: RequiredOptions[K];
+};
 
-class ModuleBuilder {
+class ModuleBuilder implements ModuleBuilderHandler {
   private _imports: Metadata['imports'] = [];
   private _controllers: Metadata['controllers'] = [];
   private _providers: Metadata['providers'] = [];
   private _exports: Metadata['exports'] = [];
 
   constructor(private readonly options: ICreateModuleOptions) {
-    const keys = Object.keys(options) as (keyof ICreateModuleOptions)[];
-    keys.forEach((key) => {
+    Object.keys(options).forEach((key: keyof ICreateModuleOptions) => {
       const value = options[key];
-      if (!value) return;
-
-      const setter = Object.getOwnPropertyDescriptor(ModuleBuilder.prototype, key)?.set;
-
-      if (setter) {
-        setter.call(this, value);
+      if (!value) {
+        return;
+      }
+      if (key in this) {
+        this[key] = value as any;
       }
     });
   }
@@ -109,6 +97,85 @@ class ModuleBuilder {
     this._imports.push(...value);
   }
 
+  set collection(options: RequiredOptions['collection']) {
+    const handleCollection = (options: CollectionConfig) => {
+      const module = MongooseModule.forFeatureAsync(
+        [
+          {
+            name: options.name,
+            useFactory: async () => {
+              return options.schema;
+            },
+            discriminators: options.discriminators,
+          },
+        ],
+        options.connectionName,
+      );
+
+      this._providers.push({
+        provide: `${options.name}_REINDEX`,
+        inject: [getModelToken(options.name, options.connectionName)],
+        useFactory: async (model: Model<any>) => {
+          try {
+            // Get the current indexes in the collection
+            const currentIndexes = await model.collection.indexes();
+            const currentIndexMap = new Map(currentIndexes.map((index) => [index.name, index]));
+
+            // Exclude the mandatory `_id` index from the current indexes
+            currentIndexMap.delete('_id_');
+
+            // Get the desired indexes from the model schema
+            const desiredIndexes = (model.schema as Schema).indexes();
+            const desiredIndexMap = new Map<string, any>(
+              desiredIndexes.map(([fields, options]) => {
+                const indexName =
+                  options?.name ||
+                  Object.entries(fields)
+                    .map((pair) => pair.join('_'))
+                    .join('_');
+                return [indexName, { fields, options }];
+              }),
+            );
+
+            // Compare indexes and decide what to do
+            for (const [name, { fields, options }] of desiredIndexMap) {
+              const currentIndex = currentIndexMap.get(name);
+
+              if (!currentIndex) {
+                // Index does not exist, create it
+                console.log(`Creating new index: ${name}`);
+                await model.collection.createIndex(fields, options);
+              }
+            }
+
+            // Drop indexes that are no longer needed
+            for (const name of Array.from(currentIndexMap.keys()).filter(isDefined) as string[]) {
+              if (!desiredIndexMap.has(name)) {
+                console.log(`Dropping index: ${name}`);
+                await model.collection.dropIndex(name);
+              }
+            }
+
+            await model.syncIndexes();
+          } catch (e) {}
+        },
+      });
+
+      this._imports.push(module);
+      this._providers.push({
+        provide: options.repoClass,
+        useExisting: getModelToken(options.name, options.connectionName),
+      });
+      this._exports.push(...[module, options.repoClass]);
+    };
+
+    if (Array.isArray(options)) {
+      options.forEach(handleCollection);
+    } else {
+      handleCollection(options);
+    }
+  }
+
   set controllers(value: RequiredOptions['controllers']) {
     this._controllers.push(...value);
   }
@@ -117,19 +184,9 @@ class ModuleBuilder {
     this._providers.push(...value);
   }
 
-  set entities(value: RequiredOptions['entities']) {
-    const { TypeOrmModule, getRepositoryToken } = requireOptional<typeof import('@nestjs/typeorm')>(
-      '@nestjs/typeorm',
-      'entities',
-    );
-
-    value.forEach((entity) => {
-      this._imports.push(TypeOrmModule.forFeature([entity.entity as any]));
-      this._providers.push({
-        provide: entity.repoClass,
-        useExisting: getRepositoryToken(entity.entity as any),
-      });
-    });
+  set chains(value: RequiredOptions['providers']) {
+    this._providers.push(...value);
+    this._exports.push(...value);
   }
 
   set gateways(value: RequiredOptions['gateways']) {
@@ -145,22 +202,15 @@ class ModuleBuilder {
     this._providers.push(...value);
   }
 
-  set listeners(value: RequiredOptions['listeners']) {
-    this._providers.push(...value);
-  }
-
   set cronJobs(value: RequiredOptions['cronJobs']) {
     this._providers.push(...value);
   }
 
   set processors(value: RequiredOptions['processors']) {
-    const { BullModule } = requireOptional<typeof import('@nestjs/bullmq')>(
-      '@nestjs/bullmq',
-      'processors',
-    );
-
-    this._imports.push(...value.map((type) => BullModule.registerQueue({ name: type.name })));
-    this._providers.push(...value);
+    if (value) {
+      this._imports.push(...value.map((type) => BullModule.registerQueue({ name: type.name })));
+      this._providers.push(...value);
+    }
   }
 
   set init(value: RequiredOptions['init']) {
@@ -169,15 +219,14 @@ class ModuleBuilder {
 
   set modules(value: RequiredOptions['modules']) {
     this._imports.push(...value);
-    this._exports.push(...(value as Metadata['exports']));
+    // @ts-ignore
+    this._exports.push(...value);
   }
 
-  toMetadata(): ModuleMetadata {
-    return {
-      imports: this._imports,
-      controllers: this._controllers,
-      exports: this._exports,
-      providers: this._providers,
-    };
-  }
+  toMetadata = (): ModuleMetadata => ({
+    imports: this._imports,
+    controllers: this._controllers,
+    exports: this._exports,
+    providers: this._providers,
+  });
 }
