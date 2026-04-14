@@ -4,6 +4,7 @@ import { Module, ModuleMetadata, Provider, Type } from '@nestjs/common';
 import { BullModule, WorkerHost } from '@nestjs/bullmq';
 import { Model, Schema } from 'mongoose';
 import { DiscriminatorOptions, getModelToken, MongooseModule } from '@nestjs/mongoose';
+import { getRepositoryToken, TypeOrmModule } from '@nestjs/typeorm';
 import { isDefined } from 'class-validator';
 import { AbstractType } from '../types';
 import { MongoModelRepo } from '../types/mongo-model-repo';
@@ -24,6 +25,15 @@ export interface CreateCollectionConfig {
   discriminators?: DiscriminatorOptions[];
 }
 
+export type EntityTarget =
+  | (new (...args: any[]) => any)
+  | { name: string; options?: unknown };
+
+export interface EntityOptions<T extends EntityTarget = EntityTarget> {
+  entity: T;
+  repoClass: Type;
+}
+
 export interface ICreateModuleOptions {
   // Standard NestJS Exports
   imports?: Metadata['imports'];
@@ -33,6 +43,9 @@ export interface ICreateModuleOptions {
 
   // Auto create MongoDB Collection
   collection?: CollectionConfig | CollectionConfig[];
+
+  // Auto register TypeORM entities with repository classes (requires @nestjs/typeorm)
+  entities?: EntityOptions[];
 
   // Standard NestJS Controllers
   controllers?: Metadata['controllers'];
@@ -51,6 +64,9 @@ export interface ICreateModuleOptions {
 
   // For Organization, Will be treated as non-exported Provider
   events?: Metadata['providers'];
+
+  // For Organization, Will be treated as non-exported Provider
+  listeners?: Metadata['providers'];
 
   // For Organization, Will be treated as non-exported Provider
   cronJobs?: Metadata['providers'];
@@ -95,6 +111,17 @@ class ModuleBuilder implements ModuleBuilderHandler {
 
   set imports(value: RequiredOptions['imports']) {
     this._imports.push(...value);
+  }
+
+  set entities(value: RequiredOptions['entities']) {
+    value.forEach((config) => {
+      this._imports.push(TypeOrmModule.forFeature([config.entity as any]));
+      this._providers.push({
+        provide: config.repoClass,
+        useExisting: getRepositoryToken(config.entity as any),
+      });
+      this._exports.push(config.repoClass);
+    });
   }
 
   set collection(options: RequiredOptions['collection']) {
@@ -199,6 +226,10 @@ class ModuleBuilder implements ModuleBuilderHandler {
   }
 
   set events(value: RequiredOptions['events']) {
+    this._providers.push(...value);
+  }
+
+  set listeners(value: RequiredOptions['listeners']) {
     this._providers.push(...value);
   }
 

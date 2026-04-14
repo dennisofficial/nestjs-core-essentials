@@ -23,5 +23,5 @@ export default defineConfig({
   external,
   treeshake: true,
   minify: false,
-  target: 'es2022',
+  target: 'es2023',
 });
