@@ -8,6 +8,10 @@ import { LoggerInterceptor } from './logger.interceptor';
   providers: [
     LoggerService,
     {
+      provide: 'pretty-ms',
+      useFactory: async () => await import('pretty-ms'),
+    },
+    {
       useClass: LoggerInterceptor,
       provide: APP_INTERCEPTOR,
     },

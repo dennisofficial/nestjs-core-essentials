@@ -61,8 +61,10 @@
     "class-validator": "^0.15.1",
     "mongodb": "^7.1.1",
     "mongoose": "^9.4.1",
-    "pretty-ms": "^9.3.0",
     "tsup": "^8.5.0",
     "typescript": "^6.0.2"
+  },
+  "dependencies": {
+    "pretty-ms": "^9.3.0"
   }
 }
