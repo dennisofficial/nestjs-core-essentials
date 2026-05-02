@@ -61,6 +61,8 @@
     "class-validator": "^0.15.1",
     "mongodb": "^7.1.1",
     "mongoose": "^9.4.1",
+    "prettier": "^3.8.3",
+    "prettier-plugin-organize-imports": "^4.3.0",
     "tsup": "^8.5.0",
     "typescript": "^6.0.2"
   },

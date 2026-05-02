@@ -1,8 +1,9 @@
 {
-  "watch": [
-    "src"
-  ],
+  "watch": ["src"],
   "ext": "ts",
-  "exec": "pnpm build"
+  "exec": "pnpm build",
+  "events": {
+    "start": "clear",
+    "restart": "clear"
+  }
 }
-
