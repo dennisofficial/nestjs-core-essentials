@@ -1,11 +1,11 @@
 // noinspection JSUnusedGlobalSymbols
 
-import { Module, ModuleMetadata, Provider, Type } from '@nestjs/common';
 import { BullModule, WorkerHost } from '@nestjs/bullmq';
-import { Model, Schema } from 'mongoose';
+import { Module, ModuleMetadata, Provider, Type } from '@nestjs/common';
 import { DiscriminatorOptions, getModelToken, MongooseModule } from '@nestjs/mongoose';
 import { getRepositoryToken, TypeOrmModule } from '@nestjs/typeorm';
 import { isDefined } from 'class-validator';
+import { Model, Schema } from 'mongoose';
 import { AbstractType } from '../types';
 import { MongoModelRepo } from '../types/mongo-model-repo';
 
@@ -25,9 +25,7 @@ export interface CreateCollectionConfig {
   discriminators?: DiscriminatorOptions[];
 }
 
-export type EntityTarget =
-  | (new (...args: any[]) => any)
-  | { name: string; options?: unknown };
+export type EntityTarget = (new (...args: any[]) => any) | { name: string; options?: unknown };
 
 export interface EntityOptions<T extends EntityTarget = EntityTarget> {
   entity: T;
