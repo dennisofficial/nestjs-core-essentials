@@ -9,7 +9,7 @@ import { Model, Schema } from 'mongoose';
 import { AbstractType } from '../types';
 import { MongoModelRepo } from '../types/mongo-model-repo';
 
-interface CollectionConfig extends CreateCollectionConfig {
+type CollectionConfig = CreateCollectionConfig & {
   connectionName?: string;
   repoClass: AbstractType<MongoModelRepo<any>>;
 }
@@ -19,7 +19,7 @@ export const CreateModule = (options: ICreateModuleOptions) =>
 
 type Metadata = Required<ModuleMetadata>;
 
-export interface CreateCollectionConfig {
+export type CreateCollectionConfig = {
   name: string;
   schema: Schema;
   discriminators?: DiscriminatorOptions[];
@@ -27,12 +27,12 @@ export interface CreateCollectionConfig {
 
 export type EntityTarget = (new (...args: any[]) => any) | { name: string; options?: unknown };
 
-export interface EntityOptions<T extends EntityTarget = EntityTarget> {
+export type EntityOptions<T extends EntityTarget = EntityTarget> = {
   entity: T;
   repoClass: Type;
 }
 
-export interface ICreateModuleOptions {
+export type ICreateModuleOptions = {
   // Standard NestJS Exports
   imports?: Metadata['imports'];
 
