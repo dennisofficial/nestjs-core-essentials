@@ -35,7 +35,8 @@
     "@nestjs/typeorm": ">=11.0.0",
     "express": ">=4.0.0",
     "reflect-metadata": ">=0.1.0",
-    "rxjs": ">=7.0.0"
+    "rxjs": ">=7.0.0",
+    "typeorm": ">=0.3.0"
   },
   "peerDependenciesMeta": {
     "@nestjs/bullmq": {
@@ -52,6 +53,9 @@
     },
     "express": {
       "optional": true
+    },
+    "typeorm": {
+      "optional": true
     }
   },
   "devDependencies": {
@@ -64,6 +68,7 @@
     "prettier": "^3.8.3",
     "prettier-plugin-organize-imports": "^4.3.0",
     "tsup": "^8.5.0",
+    "typeorm": "^0.3.28",
     "typescript": "^6.0.2"
   },
   "dependencies": {

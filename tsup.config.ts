@@ -24,4 +24,7 @@ export default defineConfig({
   treeshake: true,
   minify: false,
   target: 'es2023',
+  // Injects a `require` shim into the ESM build so that runSeeds (which uses
+  // require() for CJS-compatible dynamic seed loading) compiles without errors.
+  shims: true,
 });
