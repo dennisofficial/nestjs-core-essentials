@@ -22,7 +22,7 @@ export type EnvModuleOptions = {
    * Whether to load from .env file. Default: false (ignoreEnvFile: true)
    */
   loadEnvFile?: boolean;
-}
+};
 
 /**
  * Dynamic module for type-safe environment configuration.

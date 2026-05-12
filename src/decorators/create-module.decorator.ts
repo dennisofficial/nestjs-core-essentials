@@ -12,7 +12,7 @@ import { MongoModelRepo } from '../types/mongo-model-repo';
 type CollectionConfig = CreateCollectionConfig & {
   connectionName?: string;
   repoClass: AbstractType<MongoModelRepo<any>>;
-}
+};
 
 export const CreateModule = (options: ICreateModuleOptions) =>
   Module(new ModuleBuilder(options).toMetadata());
@@ -23,14 +23,14 @@ export type CreateCollectionConfig = {
   name: string;
   schema: Schema;
   discriminators?: DiscriminatorOptions[];
-}
+};
 
 export type EntityTarget = (new (...args: any[]) => any) | { name: string; options?: unknown };
 
 export type EntityOptions<T extends EntityTarget = EntityTarget> = {
   entity: T;
   repoClass: Type;
-}
+};
 
 export type ICreateModuleOptions = {
   // Standard NestJS Exports
@@ -77,7 +77,7 @@ export type ICreateModuleOptions = {
 
   // Standard NestJS Exports
   exports?: Metadata['exports'];
-}
+};
 
 type RequiredOptions = Required<ICreateModuleOptions>;
 

@@ -3,4 +3,4 @@ export type LoggerResponse = {
   start_time: number;
   status?: number;
   message?: string;
-}
+};
