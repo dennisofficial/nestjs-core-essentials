@@ -1,11 +1,12 @@
 import { Global, Module } from '@nestjs/common';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_INTERCEPTOR, Reflector } from '@nestjs/core';
 import { LoggerInterceptor } from './logger.interceptor';
 import { LoggerService } from './logger.service';
 
 @Global()
 @Module({
   providers: [
+    Reflector,
     LoggerService,
     {
       provide: 'pretty-ms',
