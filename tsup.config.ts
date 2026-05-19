@@ -24,4 +24,5 @@ export default defineConfig({
   treeshake: true,
   minify: false,
   target: 'es2023',
+  shims: true,
 });
