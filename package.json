@@ -30,10 +30,12 @@
     "@nestjs/common": ">=11.0.0",
     "@nestjs/config": ">=4.0.0",
     "@nestjs/core": ">=11.0.0",
+    "@nestjs/mongoose": ">=11.0.0",
     "@nestjs/typeorm": ">=11.0.0",
     "express": ">=4.0.0",
     "reflect-metadata": ">=0.1.0",
-    "rxjs": ">=7.0.0"
+    "rxjs": ">=7.0.0",
+    "typeorm": ">=0.3.0"
   },
   "peerDependenciesMeta": {
     "@nestjs/bullmq": {
@@ -42,10 +44,16 @@
     "@nestjs/config": {
       "optional": true
     },
+    "@nestjs/mongoose": {
+      "optional": true
+    },
     "@nestjs/typeorm": {
       "optional": true
     },
     "express": {
+      "optional": true
+    },
+    "typeorm": {
       "optional": true
     }
   },
@@ -54,10 +62,16 @@
     "@nestjs/typeorm": "^11.0.1",
     "@types/express": "^5.0.6",
     "class-validator": "^0.15.1",
-    "mongodb": "^7.1.1",
+    "mongodb": "^6.21.0",
     "mongoose": "^9.4.1",
-    "pretty-ms": "^9.3.0",
+    "nodemon": "^3.1.14",
+    "prettier": "^3.8.3",
+    "prettier-plugin-organize-imports": "^4.3.0",
     "tsup": "^8.5.0",
+    "typeorm": "^0.3.28",
     "typescript": "^6.0.2"
+  },
+  "dependencies": {
+    "pretty-ms": "^9.3.0"
   }
 }

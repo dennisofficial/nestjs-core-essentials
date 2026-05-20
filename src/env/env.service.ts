@@ -23,7 +23,7 @@ export abstract class BaseEnvService<T> extends ConfigService<T, true> {
    * @param propertyPath - The key of the environment variable
    * @returns The typed value of the environment variable
    */
-  override get<K extends keyof T & string>(propertyPath: K): T[K] {
+  override get<K extends keyof T>(propertyPath: K): T[K] {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return super.get(propertyPath as any, { infer: true }) as T[K];
   }

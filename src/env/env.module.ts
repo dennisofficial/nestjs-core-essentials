@@ -5,7 +5,7 @@ import { BaseEnvService } from './env.service';
 /**
  * Options for configuring the EnvModule.
  */
-export interface EnvModuleOptions {
+export type EnvModuleOptions = {
   /**
    * The EnvService class that extends BaseEnvService<T>.
    * This will be provided and exported by the module.
@@ -22,7 +22,7 @@ export interface EnvModuleOptions {
    * Whether to load from .env file. Default: false (ignoreEnvFile: true)
    */
   loadEnvFile?: boolean;
-}
+};
 
 /**
  * Dynamic module for type-safe environment configuration.

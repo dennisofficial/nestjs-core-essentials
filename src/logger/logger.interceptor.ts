@@ -7,12 +7,12 @@ import {
   Logger,
   NestInterceptor,
 } from '@nestjs/common';
-import { catchError, finalize, Observable } from 'rxjs';
-import { Response } from 'express';
-import { SKIP_REQUEST_LOGGING_METADATA } from './metadata';
-import { LoggerResponse } from './logger.types';
-import { LoggerService } from './logger.service';
 import { Reflector } from '@nestjs/core';
+import { Response } from 'express';
+import { catchError, finalize, Observable } from 'rxjs';
+import { LoggerService } from './logger.service';
+import { LoggerResponse } from './logger.types';
+import { SKIP_REQUEST_LOGGING_METADATA } from './metadata';
 
 @Injectable()
 export class LoggerInterceptor implements NestInterceptor {
