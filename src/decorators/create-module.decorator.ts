@@ -236,8 +236,16 @@ class ModuleBuilder implements ModuleBuilderHandler {
   }
 
   set processors(value: RequiredOptions['processors']) {
-    if (value) {
-      this._imports.push(...value.map((type) => BullModule.registerQueue({ name: type.name })));
+    if (!value) return;
+    // BullModule.registerQueue is always added so producers can enqueue jobs in any process.
+    this._imports.push(...value.map((type) => BullModule.registerQueue({ name: type.name })));
+    // The @Processor classes themselves are only registered as providers in the worker
+    // process. NestJS instantiates providers eagerly, and @nestjs/bullmq's WorkerHost
+    // base attaches a Redis consumer on instantiation — so registering processors in
+    // the API process would cause both api and worker to compete for the same jobs.
+    // Gate via BACKEND_PROCESS_MODE: 'worker' enables consumption, anything else (api,
+    // unset) skips it.
+    if (process.env.BACKEND_PROCESS_MODE === 'worker') {
       this._providers.push(...value);
     }
   }
