@@ -69,8 +69,15 @@ export type ICreateModuleOptions = {
   // For Organization, Will be treated as non-exported Provider
   cronJobs?: Metadata['providers'];
 
-  // Auto Create BullMQ Processes
+  // Auto Create BullMQ Processes — registers Queue tokens AND registers the
+  // processor classes as providers. Always set this on the WORKER side; never
+  // on the API side (the api/worker split is structural, see backend/AGENTS.md).
   processors?: Type<WorkerHost>[];
+
+  // Register BullMQ Queue tokens by name without owning the processor class.
+  // Producer-side modules use this so they can inject `Queue<T>` to enqueue
+  // jobs, while the consumer (processor) lives in a worker-side module.
+  queues?: string[];
 
   // For Organization, Will be treated as non-exported Provider
   init?: Provider;
@@ -237,17 +244,17 @@ class ModuleBuilder implements ModuleBuilderHandler {
 
   set processors(value: RequiredOptions['processors']) {
     if (!value) return;
-    // BullModule.registerQueue is always added so producers can enqueue jobs in any process.
-    this._imports.push(...value.map((type) => BullModule.registerQueue({ name: type.name })));
-    // The @Processor classes themselves are only registered as providers in the worker
-    // process. NestJS instantiates providers eagerly, and @nestjs/bullmq's WorkerHost
-    // base attaches a Redis consumer on instantiation — so registering processors in
-    // the API process would cause both api and worker to compete for the same jobs.
-    // Gate via BACKEND_PROCESS_MODE: 'worker' enables consumption, anything else (api,
-    // unset) skips it.
-    if (process.env.BACKEND_PROCESS_MODE === 'worker') {
-      this._providers.push(...value);
-    }
+    // Register the processor class as a provider. NestJS instantiates providers
+    // eagerly and @nestjs/bullmq's WorkerHost attaches a Redis consumer on
+    // instantiation, so this MUST only be set from worker-side modules (see
+    // backend/AGENTS.md). Queue registration is separate (`queues` option, or
+    // inherited from an imported module).
+    this._providers.push(...value);
+  }
+
+  set queues(value: RequiredOptions['queues']) {
+    if (!value) return;
+    this._imports.push(...value.map((name) => BullModule.registerQueue({ name })));
   }
 
   set init(value: RequiredOptions['init']) {
