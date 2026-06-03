@@ -74,10 +74,11 @@ export type ICreateModuleOptions = {
   // on the API side (the api/worker split is structural, see backend/AGENTS.md).
   processors?: Type<WorkerHost>[];
 
-  // Register BullMQ Queue tokens by name without owning the processor class.
-  // Producer-side modules use this so they can inject `Queue<T>` to enqueue
-  // jobs, while the consumer (processor) lives in a worker-side module.
-  queues?: string[];
+  // Register BullMQ Queue tokens. Pass the processor class directly or a plain
+  // string. Class form is preferred — `queues: [MyProcessor]` — so the queue
+  // name stays in one place (the class name) and renaming the class updates
+  // everything automatically. The string form is available as a fallback.
+  queues?: (string | { name: string })[];
 
   // For Organization, Will be treated as non-exported Provider
   init?: Provider;
@@ -256,7 +257,11 @@ class ModuleBuilder implements ModuleBuilderHandler {
 
   set queues(value: RequiredOptions['queues']) {
     if (!value) return;
-    this._imports.push(...value.map((name) => BullModule.registerQueue({ name })));
+    this._imports.push(
+      ...value.map((nameOrClass) =>
+        BullModule.registerQueue({ name: typeof nameOrClass === 'string' ? nameOrClass : nameOrClass.name }),
+      ),
+    );
   }
 
   set init(value: RequiredOptions['init']) {
