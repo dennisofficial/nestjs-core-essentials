@@ -13,19 +13,32 @@ import { map, mergeMap } from 'rxjs/operators';
 
 /**
  * Converts an AsyncGenerator to an Observable that emits each yielded value.
+ *
+ * On unsubscribe (e.g. the SSE client disconnects, Nest tears down the
+ * subscription), the returned teardown flips `cancelled` and calls
+ * `generator.return()`. That runs any `finally {}` inside the generator — which
+ * is how a streaming handler aborts its upstream work (e.g. an
+ * `AbortController` tailing BullMQ `QueueEvents`). Without this, a disconnected
+ * client would leak the generator and its upstream listeners.
  */
 function fromAsyncGenerator<T>(generator: AsyncGenerator<T>): Observable<T> {
   return new Observable<T>((subscriber) => {
+    let cancelled = false;
     (async () => {
       try {
         for await (const value of generator) {
+          if (cancelled) break;
           subscriber.next(value);
         }
-        subscriber.complete();
+        if (!cancelled) subscriber.complete();
       } catch (error) {
-        subscriber.error(error);
+        if (!cancelled) subscriber.error(error);
       }
     })();
+    return () => {
+      cancelled = true;
+      void generator.return(undefined as never);
+    };
   });
 }
 

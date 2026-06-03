@@ -248,7 +248,9 @@ class ModuleBuilder implements ModuleBuilderHandler {
     // eagerly and @nestjs/bullmq's WorkerHost attaches a Redis consumer on
     // instantiation, so this MUST only be set from worker-side modules (see
     // backend/AGENTS.md). Queue registration is separate (`queues` option, or
-    // inherited from an imported module).
+    // inherited from an imported module) — and is REQUIRED: a @Processor only
+    // becomes a live Worker if its queue is registered somewhere in the app, so
+    // a worker consumer module must also bring that queue into scope.
     this._providers.push(...value);
   }
 
