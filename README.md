@@ -1,6 +1,10 @@
-# @workspace/nestjs-core
+# @dltech/nestjs-core
 
 Shared NestJS utilities used across all Cubix backend services.
+
+```
+pnpm add @dltech/nestjs-core
+```
 
 ---
 
@@ -37,7 +41,7 @@ Drop-in structured logger module.
 
 ```typescript
 // app.module.ts
-import { LoggerModule } from '@workspace/nestjs-core';
+import { LoggerModule } from '@dltech/nestjs-core';
 
 @Module({ imports: [LoggerModule] })
 export class AppModule {}
@@ -81,7 +85,7 @@ in order.
 
 ```typescript
 import { resolve } from 'path';
-import { runSeeds } from '@workspace/nestjs-core';
+import { runSeeds } from '@dltech/nestjs-core';
 import { AppDataSource } from './data-source';
 
 async function main(): Promise<void> {
@@ -106,7 +110,7 @@ void main();
 
 ```typescript
 // seeds/001-dev-user.ts
-import type { Seeder } from '@workspace/nestjs-core';
+import type { Seeder } from '@dltech/nestjs-core';
 
 export default (async (ds) => {
   const repo = ds.getRepository(User);

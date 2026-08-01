@@ -12,7 +12,7 @@ import type { DataSource } from 'typeorm';
  *
  * @example
  * ```typescript
- * import type { Seeder } from '@workspace/nestjs-core';
+ * import type { Seeder } from '@dltech/nestjs-core';
  *
  * export default (async (ds) => {
  *   const repo = ds.getRepository(User);
@@ -37,7 +37,7 @@ export type Seeder = (ds: DataSource) => Promise<void>;
  * ```typescript
  * // cli/seed-runner.ts
  * import { resolve } from 'path';
- * import { runSeeds } from '@workspace/nestjs-core';
+ * import { runSeeds } from '@dltech/nestjs-core';
  * import { AppDataSource } from './data-source';
  *
  * await AppDataSource.initialize();

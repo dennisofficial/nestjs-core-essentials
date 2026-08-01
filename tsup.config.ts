@@ -15,7 +15,7 @@ const external = [
 export default defineConfig({
   entry: ['src/index.ts'],
   format: ['cjs', 'esm'],
-  dts: false,
+  dts: { compilerOptions: { incremental: false, ignoreDeprecations: '6.0' } },
   splitting: true,
   sourcemap: true,
   clean: true,

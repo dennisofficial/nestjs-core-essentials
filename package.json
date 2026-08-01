@@ -1,29 +1,63 @@
 {
-  "name": "@workspace/nestjs-core",
-  "version": "1.1.0",
-  "description": "Essential NestJS utilities and decorators",
+  "name": "@dltech/nestjs-core",
+  "version": "1.0.0-next.0",
+  "description": "Essential NestJS utilities: typed env config, structured request logging, a declarative module builder for TypeORM/Mongoose/BullMQ, a TypeORM dev seeder, an SSE async-generator decorator, and a shutdown guard.",
+  "license": "MIT",
+  "author": "Dennis Lysenko",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dennisofficial/nestjs-core-essentials.git"
+  },
+  "homepage": "https://github.com/dennisofficial/nestjs-core-essentials#readme",
+  "bugs": {
+    "url": "https://github.com/dennisofficial/nestjs-core-essentials/issues"
+  },
+  "keywords": [
+    "nestjs",
+    "nest",
+    "typeorm",
+    "mongoose",
+    "bullmq",
+    "seeder",
+    "logger",
+    "sse",
+    "server-sent-events",
+    "shutdown",
+    "decorators"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "type": "commonjs",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
-  "types": "./src/index.ts",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "import": {
-        "types": "./src/index.ts",
+        "types": "./dist/index.d.mts",
         "default": "./dist/index.mjs"
       },
       "require": {
-        "types": "./src/index.ts",
+        "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
       }
-    }
+    },
+    "./package.json": "./package.json"
   },
   "files": [
-    "dist",
-    "src"
+    "dist"
   ],
   "scripts": {
-    "build": "pnpm tsup",
-    "dev": "nodemon"
+    "build": "tsup",
+    "changeset": "changeset",
+    "release": "changeset version",
+    "dev": "nodemon",
+    "prepare": "pnpm build",
+    "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
     "@nestjs/bullmq": ">=11.0.0",
@@ -33,6 +67,7 @@
     "@nestjs/mongoose": ">=11.0.0",
     "@nestjs/typeorm": ">=11.0.0",
     "express": ">=4.0.0",
+    "mongoose": ">=8.0.0",
     "reflect-metadata": ">=0.1.0",
     "rxjs": ">=7.0.0",
     "typeorm": ">=0.3.0"
@@ -53,25 +88,38 @@
     "express": {
       "optional": true
     },
+    "mongoose": {
+      "optional": true
+    },
     "typeorm": {
       "optional": true
     }
   },
   "devDependencies": {
+    "@changesets/cli": "^2.31.1",
+    "@nestjs/bullmq": "^11.0.4",
+    "@nestjs/common": "^11.0.1",
+    "@nestjs/config": "^4.0.4",
+    "@nestjs/core": "^11.0.1",
     "@nestjs/mongoose": "^11.0.4",
     "@nestjs/typeorm": "^11.0.1",
     "@types/express": "^5.0.6",
-    "class-validator": "^0.15.1",
+    "@types/node": "^25.6.0",
+    "express": "^5.1.0",
     "mongodb": "^6.21.0",
     "mongoose": "^9.4.1",
     "nodemon": "^3.1.14",
     "prettier": "^3.8.3",
     "prettier-plugin-organize-imports": "^4.3.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
     "tsup": "^8.5.0",
     "typeorm": "^0.3.28",
-    "typescript": "^6.0.3"
+    "typescript": "6.0.3"
   },
   "dependencies": {
+    "class-validator": "^0.15.1",
     "pretty-ms": "^9.3.0"
-  }
+  },
+  "packageManager": "pnpm@11.18.0+sha512.33d83c77da82f49fba836925c6f1b841181ec3132b670639bd012f7075f5c7cf634c5f870147c19aae7478fac01df09d8892e880454896edd23ee9b33757563c"
 }

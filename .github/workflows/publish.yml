@@ -1,0 +1,145 @@
+name: CI / Publish
+
+# Verification and publishing live in one workflow so the suite runs exactly once per
+# commit. `publish` depends on `verify` via `needs:`, which guarantees they ran on the
+# same commit — a separate workflow chained with `workflow_run` could not promise that.
+#
+# The filename is load-bearing: npm's trusted publisher for this package is configured
+# against `publish.yml`, so renaming this file breaks publishing until the npm config is
+# updated to match. The display name above is free to change.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-publish-${{ github.ref }}
+  # Superseded PR pushes are worth cancelling; a release in flight is not.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  verify:
+    name: Build, typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+
+      # pnpm's version comes from the `packageManager` field in package.json, so CI can
+      # never drift from local dev. Corepack ships with Node 24; from Node 25 it is
+      # unbundled and this step needs `npm i -g corepack` in front of it.
+      - name: Enable corepack
+        run: corepack enable
+
+      # setup-node's built-in `cache: pnpm` can't be used here — it probes for pnpm before
+      # corepack has installed the shims, so it fails to find a package manager. Caching
+      # the store directly is equivalent.
+      - name: Resolve pnpm store
+        id: pnpm-store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+
+      # `prepare` runs tsup, so dist/ and the .d.ts/.d.mts trees are built here.
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+  publish:
+    name: Tag and publish to npm
+    needs: verify
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      # Required for npm trusted publishing and provenance, which sign the package with a
+      # verifiable link back to this workflow run.
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Resolve pnpm store
+        id: pnpm-store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+
+      # The release trigger is a version in package.json with no matching tag. Every other
+      # push to main leaves the version alone and stops here.
+      - name: Read version
+        id: v
+        run: |
+          version=$(node -p "require('./package.json').version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if git rev-parse "v$version" >/dev/null 2>&1; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+            echo "v$version is already tagged; nothing to release."
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+            echo "v$version is new; proceeding to release."
+          fi
+
+      # No typecheck here — `needs: verify` already ran it on this exact commit.
+      - run: pnpm install --frozen-lockfile
+        if: steps.v.outputs.published == 'false'
+
+      # Catches the failure modes a green typecheck cannot: a broken exports map,
+      # types that resolve in this repo but not from an installed tarball, or files
+      # missing from the published artifact.
+      - name: Validate publishable artifact
+        if: steps.v.outputs.published == 'false'
+        run: |
+          pnpm pack
+          npx --yes publint@latest "dltech-nestjs-core-${{ steps.v.outputs.version }}.tgz"
+          npx --yes @arethetypeswrong/cli@latest "dltech-nestjs-core-${{ steps.v.outputs.version }}.tgz" --ignore-rules no-resolution
+
+      # Authenticated via npm trusted publishing: the `id-token: write` permission above
+      # lets pnpm exchange a GitHub OIDC token for short-lived npm credentials, so there is
+      # no NPM_TOKEN secret to store, rotate, or leak.
+      - name: Publish
+        if: steps.v.outputs.published == 'false'
+        run: pnpm publish --access public --no-git-checks --provenance
+
+      # Tagging follows a successful publish, so a failed release leaves no tag and the
+      # same version can simply be pushed again.
+      - name: Tag release
+        if: steps.v.outputs.published == 'false'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "v${{ steps.v.outputs.version }}" -m "v${{ steps.v.outputs.version }}"
+          git push origin "v${{ steps.v.outputs.version }}"
+
+      - name: Create GitHub release
+        if: steps.v.outputs.published == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v${{ steps.v.outputs.version }}" \
+            --title "v${{ steps.v.outputs.version }}" \
+            --notes "Published \`@dltech/nestjs-core@${{ steps.v.outputs.version }}\` to npm. See CHANGELOG.md for details." \
+            --verify-tag
