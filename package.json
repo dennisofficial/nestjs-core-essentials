@@ -1,6 +1,6 @@
 {
   "name": "@dltech/nestjs-core",
-  "version": "1.0.0-next.0",
+  "version": "1.0.0",
   "description": "Essential NestJS utilities: typed env config, structured request logging, a declarative module builder for TypeORM/Mongoose/BullMQ, a TypeORM dev seeder, an SSE async-generator decorator, and a shutdown guard.",
   "license": "MIT",
   "author": "Dennis Lysenko",
