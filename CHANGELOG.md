@@ -1,5 +1,15 @@
 # @dltech/nestjs-core
 
+## 1.0.1
+
+### Patch Changes
+
+- Fix `design:paramtypes` missing from the published build, which made every provider with constructor-injected dependencies unresolvable by Nest (e.g. `LoggerInterceptor` failed with `Nest can't resolve dependencies of the LoggerInterceptor (?, +, pretty-ms)`).
+
+  `tsup` only honours `emitDecoratorMetadata` when it can resolve `@swc/core`, and silently degrades to a warning — not a failure — when it can't. `@swc/core` wasn't a dependency, so the flag did nothing and the build shipped zero `design:paramtypes` despite `experimentalDecorators`/`emitDecoratorMetadata` both being on in `tsconfig.json`.
+
+  Added `@swc/core` as a devDependency (build-time only, not shipped to consumers). No API changes — only the build output is different.
+
 ## 1.0.0
 
 ### Major Changes
